@@ -1,94 +1,80 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
 import random
 import time
 
-# 1. 페이지 설정 (최상단 고정)
-st.set_page_config(page_title="Nina's Secret Taro Lab", page_icon="🔮", layout="wide")
+# 1. 페이지 설정
+st.set_page_config(page_title="Nina's Mental Lab", page_icon="🧪", layout="wide")
 
-# 2. 타이틀 및 스타일링 (시크하게!)
+# 2. 스타일링 (네온 그린 & 블랙 컨셉 - 개발자 느낌 물씬!)
 st.markdown("""
     <style>
-    .main { background-color: #1a1a1a; color: #ffffff; }
-    .stButton>button { background-color: #7b2cbf; color: white; border-radius: 15px; width: 100%; border: none; padding: 12px; font-size: 18px; font-weight: bold; transition: all 0.3s; }
-    .stButton>button:hover { background-color: #9d4edd; transform: scale(1.02); }
-    .stAlert { background-color: #2a2a2a; color: white; border: 1px solid #7b2cbf; border-radius: 10px; }
-    h1, h2, h3 { color: #9d4edd !important; font-family: 'Georgia', serif; }
-    .stTabs [data-baseweb="tab-list"] { background-color: #1a1a1a; }
-    .stTabs [data-baseweb="tab"] { color: #ffffff; font-size: 16px; font-family: 'Georgia', serif; }
-    .stTabs [data-baseweb="tab"]:hover { color: #9d4edd; }
+    .main { background-color: #0e1117; color: #00ff41; }
+    .stButton>button { background-color: #00ff41; color: black; border-radius: 10px; font-weight: bold; border: none; }
+    .stButton>button:hover { background-color: #008f11; color: white; }
+    h1, h2, h3 { color: #00ff41 !important; font-family: 'Courier New', monospace; }
+    .stSlider [data-baseweb="slider"] { color: #00ff41; }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🔮 Nina's Secret Taro Lab v4.5")
-st.markdown("### 당신의 운명, '시크한 논리'로 해석해 드립니다.")
+st.title("🧪 Nina's Mental Logic Lab v5.0")
+st.write("오늘 당신의 멘탈 상태를 논리적으로 데이터화하여 처방전을 내립니다.")
 
-# 3. 사이드바 (컨트롤 패널)
-st.sidebar.title("🚀 Lab Control")
-lab_mode = st.sidebar.radio("연구 모드 선택", ["오늘의 미스터리 타로", "성격 & 에너지 분석"])
+# 3. 데이터 및 로직
+quotes = [
+    "프랑스어로 'C'est la vie'라고 하죠. 에러 좀 나면 어때요? 인생이 그런 거지.",
+    "논리가 부족하면 목소리라도 커야 합니다. 하지만 당신은 둘 다 갖췄군요!",
+    "완벽주의는 피곤해요. 오늘 조퇴한 당신이 진정한 승리자입니다.",
+    "교수님의 잔소리는 데이터 노이즈일 뿐입니다. 필터링하세요.",
+    "코딩은 기싸움입니다. 컴퓨터한테 기눌리지 마세요."
+]
 
-# 4. 데이터 (타로 카드 및 성격 유형)
-taro_cards = {
-    "The Fool": "🎈 **바보**: 새로운 시작, 모험, 무모함. 오늘 당신의 논리가 조금 무모할 수도? 하지만 즐기세요! (C'est la vie!)",
-    "The Magician": "✨ **마법사**: 창조, 기술, 의지력. 당신의 박학다식함이 빛을 발할 날입니다! (Très bien!)",
-    "The High Priestess": "🌙 **여사제**: 직관, 신비, 내면의 지혜. 오늘은 논리보다 '느낌'을 믿어보세요.",
-    "The Empress": "🌿 **여황제**: 풍요, 모성, 자연. 당신의 창의력이 결실을 맺을 것입니다.",
-    "The Emperor": "👑 **황제**: 권위, 구조, 통제. 가끔은 당신의 논리로 세상을 통제하고 싶죠?",
-    "The Lovers": "💖 **연인**: 사랑, 조화, 선택. 오늘은 중요한 선택을 해야 할 수도 있습니다.",
-    "The Chariot": "🚜 **전차**: 승리, 의지, 통제. 당신의 목표를 향해 거침없이 나아가세요! (Allez!)",
-    "Strength": "🦁 **힘**: 용기, 인내, 부드러운 힘. 당신의 논리력은 당신의 가장 큰 힘입니다.",
+colors = {
+    "심해의 블루": "#0077b6",
+    "열정의 레드": "#e63946",
+    "평화의 그린": "#2a9d8f",
+    "자유의 옐로우": "#e9c46a",
+    "시크한 퍼플": "#6d597a"
 }
 
-mbti_types = {
-    "ENTP": "💡 **발명가**: 박학다식하고 독창적이며 창의적입니다. 끊임없이 새로운 아이디어를 제안하고 논쟁을 즐깁니다.",
-    "INTP": "🧠 **아이디어뱅크**: 비평적인 관점을 가지고 있으며 논리적이고 분석적입니다. 지적 호기심이 강합니다.",
-    "INTJ": "🎯 **전략가**: 독창적이고 독립적이며 비판적입니다. 목표를 달성하기 위해 집요하게 파고듭니다.",
-    "ENTJ": "📢 **지도자**: 단호하고 솔직하며 리더십이 있습니다. 목표를 달성하기 위해 조직을 이끄는 능력이 탁월합니다.",
-}
+# 4. 레이아웃 (2개 탭)
+tab1, tab2 = st.tabs(["📊 멘탈 분석기", "🌈 컬러 처방전"])
 
-# 5. 메인 화면 구성 (탭)
-t1, t2 = st.tabs(["🔮 미스터리 타로", "📊 성격 & 에너지"])
-
-with t1:
-    st.subheader("오늘의 미스터리 타로")
-    st.write("시크한 논리로 당신의 타로 카드를 해석합니다.")
-    if st.button("🃏 운명의 카드 뽑기"):
-        with st.spinner("운명의 카드를 섞는 중..."):
-            time.sleep(2) # 애니메이션 효과
-            card_name, card_desc = random.choice(list(taro_cards.items()))
-            st.success(f"당신이 뽑은 카드는: **{card_name}**입니다!")
-            st.info(card_desc)
-            st.balloons() # 성공 세리머니!
-
-with t2:
-    st.subheader("박학다식 성격 분석 & 에너지")
+with tab1:
+    st.subheader("오늘의 멘탈 로그 분석")
+    col1, col2 = st.columns([1, 2])
     
-    col1, col2 = st.columns(2)
     with col1:
-        st.write("당신의 MBTI 유형을 입력하고 분석 결과를 확인해 보세요.")
-        user_mbti = st.selectbox("당신의 MBTI", list(mbti_types.keys()))
-        if st.button("🧠 성격 분석 시작"):
-            st.markdown(f"**{user_mbti}** 유형의 분석 결과입니다:")
-            st.warning(mbti_types[user_mbti])
-            st.snow() # 성격 분석 성공!
-            
-    with col2:
-        st.write("오늘 당신의 지적 호기심과 논리 에너지를 측정합니다.")
-        intel_energy = st.slider("지적 호기심", 0, 100, 80)
-        logic_energy = st.slider("논리 에너지", 0, 100, 95)
+        st.write("당신의 현재 지수를 설정하세요.")
+        stress = st.slider("스트레스 지수", 0, 100, 50)
+        happiness = st.slider("행복 지수", 0, 100, 70)
+        anger = st.slider("빡침 지수", 0, 100, 20)
         
-        # Plotly 그래프 (v2.4 환경 호환)
-        energy_df = pd.DataFrame({
-            '에너지 유형': ['지적 호기심', '논리 에너지'],
-            '수치': [intel_energy, logic_energy]
+        if st.button("📈 분석 결과 도출"):
+            with st.spinner("알고리즘 가동 중..."):
+                time.sleep(1.5)
+                st.success("분석 완료!")
+                st.balloons()
+    
+    with col2:
+        # 데이터프레임 생성 및 Plotly 차트 (조교님이 깔아준 거!)
+        data = pd.DataFrame({
+            '항목': ['스트레스', '행복', '빡침'],
+            '수치': [stress, happiness, anger]
         })
-        fig = px.bar(energy_df, x='에너지 유형', y='수치', color='에너지 유형', title="오늘의 에너지 리포트")
-        fig.update_layout(plot_bgcolor='#1a1a1a', paper_bgcolor='#1a1a1a', font_color='#ffffff')
+        fig = px.line_polar(data, r='수치', theta='항목', line_close=True, 
+                            title="당신의 멘탈 레이더망", template="plotly_dark")
+        fig.update_traces(fill='toself', line_color='#00ff41')
         st.plotly_chart(fig, use_container_width=True)
-        st.caption("Nina's Secret Taro Lab에서 측정한 신뢰도 99.9%의 에너지 리포트입니다.")
 
-# 푸터 (푸터는 심플하게)
+with tab2:
+    st.subheader("니나의 시크한 처방전")
+    if st.button("💊 처방전 받기"):
+        c_name, c_code = random.choice(list(colors.items()))
+        st.markdown(f"### 오늘의 추천 컬러: <span style='color:{c_code}'>{c_name}</span>", unsafe_allow_html=True)
+        st.info(random.choice(quotes))
+        st.snow()
+
 st.markdown("---")
-st.caption("Nina's Secret Taro Lab | v4.5 | Powered by Gemini & Nina's 시크한 논리")
+st.caption("Nina's Logic Lab | v5.0 | '조퇴는 지능 순' 캠페인 중")
